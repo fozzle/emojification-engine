@@ -1,13 +1,8 @@
-@font-face {
-  font-family: 'AppleColorEmoji';
-  src: local('AppleColorEmoji');
-}
-
 html, body {
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: AppleColorEmoji, Helvetica, sans-serif;
+    font-family: Helvetica, sans-serif;
 }
 
 .wink {

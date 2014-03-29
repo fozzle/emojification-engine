@@ -1,4 +1,4 @@
-// Shhhhh dont tell
+// Shhhhh dont tell :(
 Element.prototype.hide = function() {
   this.className = "hidden";
 }
@@ -159,7 +159,7 @@ var EmojifyUI = (function() {
         buf = "";
 
     dest.show();
-    resultControls.show();
+    // resultControls.show();
 
     emojis.forEach(function(val, i) {
 
