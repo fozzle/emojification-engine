@@ -29,7 +29,7 @@ var EmojifyUI = (function() {
     fileReader.onload = imageLoaded;
 
     fileReader.readAsDataURL(document.getElementById("image_upload").files[0]);
-  }
+  };
 
   // Callback for when an image is loaded
   var imageLoaded = function(e) {
@@ -45,20 +45,20 @@ var EmojifyUI = (function() {
       console.log(preview.width, preview.height);
       canvas.width = preview.width;
       canvas.height = preview.height;
-      
+
       resizeCanvasTo4();
 
       canvas.show();
       ctx.drawImage(preview, 0, 0);
     }, 0);
-  }
+  };
 
   // Passes off image and destination to emojify worker
   var emojify = function(e) {
     document.getElementsByClassName("content")[0].hide();
     statusDiv.show();
     emojifyWorker.postMessage({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height), width: canvas.width, height: canvas.height});
-  }
+  };
 
   // Handle worker events!
   emojifyWorker.addEventListener("message", function(messageEvent) {
@@ -106,7 +106,7 @@ var EmojifyUI = (function() {
     imageControls.addEventListener("change", imageSelected);
 
     emojifyButton.addEventListener("click", emojify);
-  }
+  };
 
   // hack replacing good maths
   var resizeCanvasTo4 = function() {
@@ -153,7 +153,7 @@ var EmojifyUI = (function() {
     }
   };
 
-  var printResult = function (emojis, dest) {    
+  var printResult = function (emojis, dest) {
     var val,
         i,
         buf = "";
@@ -163,8 +163,8 @@ var EmojifyUI = (function() {
 
     emojis.forEach(function(val, i) {
 
-      if (!(i % Math.floor(canvas.width/4)) && i) {
-        buf += "\n"
+      if ((i % Math.floor(canvas.width/4)) === 0 && i) {
+        buf += "\n";
       }
 
       buf += extractEmoji(val);
@@ -176,9 +176,9 @@ var EmojifyUI = (function() {
 
   return {
     bindButtons: bindButtons
-  }
+  };
 })();
 
 window.onload = function() {
   EmojifyUI.bindButtons();
-}
+};
