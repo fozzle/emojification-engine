@@ -12,7 +12,6 @@ var EmojifyUI = (function() {
     videoControlsButton = document.getElementById("show_picture_controls"),
     imageControls = document.getElementById("image_upload"),
     emojifyButton = document.getElementById("emojify"),
-    result = document.getElementById("result"),
     videoControls = document.getElementById("video-controls"),
     video = document.getElementById("video"),
     canvas = document.getElementById("canvas"),
@@ -20,7 +19,20 @@ var EmojifyUI = (function() {
     resultControls = document.getElementById("resultControls");
     snap = document.getElementById("snap"),
     ctx = canvas.getContext("2d"),
-    emojifyWorker = new Worker("script/emojify-worker.js");
+    emojifyWorker = new Worker("script/emojify-worker.js"),
+    scene = new THREE.Scene(),
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
+    renderer = new THREE.WebGLRenderer(),
+    textureLoader = new THREE.TextureLoader();
+
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  var ambientLight = new THREE.AmbientLight(0xffffff);
+  scene.add(ambientLight);
+
+  function render() {
+    requestAnimationFrame( render );
+    renderer.render( scene, camera );
+  }
 
   // Call back for when a file is selected
   var imageSelected = function() {
@@ -62,7 +74,7 @@ var EmojifyUI = (function() {
 
   // Handle worker events!
   emojifyWorker.addEventListener("message", function(messageEvent) {
-    if (messageEvent.data.kind === "finished") printResult(messageEvent.data.results, result);
+    if (messageEvent.data.kind === "finished") displayResult(messageEvent.data.results);
     if (messageEvent.data.kind === "status") updateStatus(messageEvent.data.status);
   });
 
@@ -153,26 +165,43 @@ var EmojifyUI = (function() {
     }
   };
 
-  var printResult = function (emojis, dest) {
+  var textureLoaded = function(position, line) {
+
+    return function(texture) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      var geometry = new THREE.PlaneGeometry(1, 1);
+      var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+      material.transparent = true;
+      var emoji = new THREE.Mesh(geometry, material);
+
+      emoji.position.set(position, line, 1);
+      scene.add(emoji);
+    };
+  };
+
+  var displayResult = function (emojis) {
+    camera.position.z = 10;
     var val,
         i,
-        buf = "";
-
-    dest.show();
-    // resultControls.show();
-
+        position = 0,
+        line = 0;
     emojis.forEach(function(val, i) {
 
+      val = emojis[i];
       if ((i % Math.floor(canvas.width/4)) === 0 && i) {
-        buf += "\n";
+        line--;
+        position = 0;
       }
 
-      buf += extractEmoji(val);
-
+      textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
+      position++;
     });
 
-    dest.textContent = buf;
+    render();
+    document.body.appendChild(renderer.domElement);
   };
+
+
 
   return {
     bindButtons: bindButtons
