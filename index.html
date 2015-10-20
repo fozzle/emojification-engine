@@ -1,43 +1,32 @@
 <!doctype html>
 <html>
   <head>
+    <link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="style/main.css" />
   </head>
   <body>
-    <div id="resultControls" class="hidden">
-      <button id="zoomIn">Zoom In</button>
-      <button id="zoomOut">Zoom Out</button>
-    </div>
-    <pre id="result" class="hidden"></pre>
-
-    <div class="wink">
-        <img src="image/wink.png"></img>
-        <div id="status" class="hidden">
-        </div>
-    </div>
-
-
-    <div class="content">
-
-      <div>
-        <canvas id="canvas" class="hidden"></canvas>
-        <img class="hidden" id="preview" />
-        <video class="hidden" width="640" height="480" id="video"></video>
+    <div id="background"></div>
+    <div id="infoContainer">
+      <h1>Emojification Engine</h1>
+      <div class="explanation">
+        Explore your photos in breathtaking 4k 3d emoji-vision. Upload a photo or take one with your camera to get started.
       </div>
-
       <div id="controls">
-          <button id="show_image_controls">Upload Image</button>
-          <input class="hidden" type="file" name="image_upload" id="image_upload" />
-          <button id="show_picture_controls">Use Webcam</button>
-      </div>
-      <div id="video-controls" class="hidden">
-        <button id="snap">Take picture</button>
-      </div>
-
-      <div>
-        <button id="emojify" class="hidden">Emojify!</button>
+          <div class="controlContainer" id="imageUploadButtonContainer">
+              Upload a Photo
+              <input type="file" name="imageUpload" id="imageUploadButton" />
+          </div>
+          <div class="controlContainer" id="takePhotoButton">Take Photo</div>
+          <div id="emojifyButton" class="hidden controlContainer">Emojify!</div>
       </div>
     </div>
+
+    <div id="status" class="hidden">
+    </div>
+    <canvas id="canvas" class="hidden"></canvas>
+    <div id="emojifyButton" class="hidden controlContainer">Emojify!</div>
+
+    <video class="hidden" width="640" height="480" id="video"></video>
 
     <script type="text/javascript" src="script/q.js"></script>
     <script type="text/javascript" src="script/three.min.js"></script>

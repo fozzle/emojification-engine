@@ -4,15 +4,14 @@ Element.prototype.hide = function() {
 };
 
 Element.prototype.show = function() {
-  this.className = "";
+  this.className = this.className.replace("hidden", "");
 };
 
 var EmojifyUI = (function() {
-  var imageControlsButton = document.getElementById("show_image_controls"),
-    videoControlsButton = document.getElementById("show_picture_controls"),
-    imageControls = document.getElementById("image_upload"),
-    emojifyButton = document.getElementById("emojify"),
-    videoControls = document.getElementById("video-controls"),
+
+  var possibleBackgrounds = ["d83dde0d.png", "d83ddeb2.png", "d83ddc7b.png", "d83ddc7d.png", "d83cdf5c.png"];
+
+  var background = document.getElementById("background"),
     video = document.getElementById("video"),
     canvas = document.getElementById("canvas"),
     statusDiv = document.getElementById("status"),
@@ -49,29 +48,26 @@ var EmojifyUI = (function() {
     var fileReader = new FileReader();
     fileReader.onload = imageLoaded;
 
-    fileReader.readAsDataURL(document.getElementById("image_upload").files[0]);
+    fileReader.readAsDataURL(document.getElementById("imageUploadButton").files[0]);
   };
 
   // Callback for when an image is loaded
   var imageLoaded = function(e) {
     console.log("imageLoaded");
-    var preview = document.getElementById("preview");
 
-    preview.src = e.target.result;
-    imageControls.hide();
-    emojifyButton.show();
-
-    // Defer so that proper width and height are obtained.
-    setTimeout(function() {
-      console.log(preview.width, preview.height);
-      canvas.width = preview.width;
-      canvas.height = preview.height;
+    var img = new Image();
+    img.src = e.target.result;
+    img.onload = function() {
+      canvas.width = img.width;
+      canvas.height = img.height;
 
       resizeCanvasTo4();
 
       canvas.show();
-      ctx.drawImage(preview, 0, 0);
-    }, 0);
+      ctx.drawImage(img, 0, 0);
+      emojifyButton.show();
+      emojifyButton.addEventListener(emojify);
+    };
   };
 
   var widthIndex;
@@ -102,20 +98,18 @@ var EmojifyUI = (function() {
 
   // Event bindings
   var bindButtons = function() {
-    imageControlsButton.addEventListener("click", function(e) {
-      imageControls.show();
-      e.target.hide();
-      videoControlsButton.hide();
-    });
+    var takePhotoButton = document.getElementById("takePhotoButton"),
+      imageUploadButton = document.getElementById("imageUploadButton"),
+      emojifyButton = document.getElementById("emojifyButton");
 
-    videoControlsButton.addEventListener("click", function(e) {
-      videoControls.show();
+
+    takePhotoButton.addEventListener("click", function(e) {
       video.show();
       startStream();
       e.target.hide();
       imageControlsButton.hide();
 
-      snap.addEventListener('click', function() {
+      emojify.addEventListener('click', function() {
         video.hide();
         canvas.show();
         canvas.width = 640;
@@ -128,12 +122,11 @@ var EmojifyUI = (function() {
         resizeCanvasTo4();
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        emojify();
       });
     });
 
-    imageControls.addEventListener("change", imageSelected);
-
-    emojifyButton.addEventListener("click", emojify);
+    imageUploadButton.addEventListener("change", imageSelected);
   };
 
   // hack replacing good maths
@@ -250,13 +243,19 @@ var EmojifyUI = (function() {
     // render();
   };
 
+  var setupBackground = function() {
+    background.style.backgroundImage = "url('emoji/" + possibleBackgrounds[Math.floor(Math.random() * possibleBackgrounds.length)] + "')";
+  };
+
 
 
   return {
-    bindButtons: bindButtons
+    bindButtons: bindButtons,
+    setupBackground: setupBackground
   };
 })();
 
 window.onload = function() {
+  EmojifyUI.setupBackground();
   EmojifyUI.bindButtons();
 };
