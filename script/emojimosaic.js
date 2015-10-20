@@ -1,6 +1,6 @@
 // Shhhhh dont tell :(
 Element.prototype.hide = function() {
-  this.className = "hidden";
+  this.className += " hidden";
 };
 
 Element.prototype.show = function() {
@@ -14,7 +14,6 @@ var EmojifyUI = (function() {
   var background = document.getElementById("background"),
     video = document.getElementById("video"),
     canvas = document.getElementById("canvas"),
-    statusDiv = document.getElementById("status"),
     resultControls = document.getElementById("resultControls");
     snap = document.getElementById("snap"),
     ctx = canvas.getContext("2d"),
@@ -44,18 +43,15 @@ var EmojifyUI = (function() {
 
   // Call back for when a file is selected
   var imageSelected = function() {
-    console.log("image selected");
     var fileReader = new FileReader();
     fileReader.onload = imageLoaded;
-
     fileReader.readAsDataURL(document.getElementById("imageUploadButton").files[0]);
   };
 
   // Callback for when an image is loaded
   var imageLoaded = function(e) {
-    console.log("imageLoaded");
-
-    var img = new Image();
+    var img = new Image(),
+      emojifyButton = document.getElementById("emojifyButton");
     img.src = e.target.result;
     img.onload = function() {
       canvas.width = img.width;
@@ -65,16 +61,37 @@ var EmojifyUI = (function() {
 
       canvas.show();
       ctx.drawImage(img, 0, 0);
+      emojifyButton.addEventListener('click', function() {
+        canvas.hide();
+        emojify();
+      });
       emojifyButton.show();
-      emojifyButton.addEventListener(emojify);
+
+      removeInitialControls();
     };
+  };
+
+  var removeInitialControls = function() {
+    var initialControls = Array.prototype.slice.call(document.getElementsByClassName("initialControl"));
+    for (var i = 0; i < initialControls.length; i++) {
+      initialControls[i].remove();
+    }
+
+    document.getElementById("explanation").remove();
   };
 
   var widthIndex;
   // Passes off image and destination to emojify worker
-  var emojify = function(e) {
+  var emojify = function() {
     document.getElementsByClassName("content")[0].hide();
-    statusDiv.show();
+
+    var header = document.getElementById("header");
+    var colorOpts = ["#f22", "#f2f", "#22f", "#2ff", "#2f2", "#ff2"];
+    var i = 0;
+    setInterval(function() {
+      header.style.textShadow = "2px 2px " + colorOpts[i];
+      i++;
+    }, 700);
     emojifyWorker.postMessage({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height), width: canvas.width, height: canvas.height});
 
     // resize to fit incoming emojis
@@ -92,8 +109,12 @@ var EmojifyUI = (function() {
 
   // Update loading bar.
   var updateStatus = function(status) {
-    if (status < 99) statusDiv.textContent = parseFloat(status).toFixed(0) + "%";
-    else statusDiv.textContent = "Finishing up...";
+    var header = document.getElementById("header");
+    if (status < 99) {
+      header.textContent = "Processing...";
+    } else {
+      header.textContent = "Finishing up...";
+    }
   };
 
   // Event bindings
@@ -106,17 +127,13 @@ var EmojifyUI = (function() {
     takePhotoButton.addEventListener("click", function(e) {
       video.show();
       startStream();
-      e.target.hide();
-      imageControlsButton.hide();
+      removeInitialControls();
+      emojifyButton.show();
 
-      emojify.addEventListener('click', function() {
+      emojifyButton .addEventListener('click', function() {
         video.hide();
-        canvas.show();
         canvas.width = 640;
         canvas.height = 480;
-
-        e.target.hide();
-        emojifyButton.show();
 
 
         resizeCanvasTo4();
@@ -166,15 +183,6 @@ var EmojifyUI = (function() {
 
   };
 
-  // Deprecated
-  // var extractEmoji = function (key) {
-  //   if (key.length > 4) {
-  //     return String.fromCharCode(parseInt(key.substr(0, 4), 16)) + String.fromCharCode(parseInt(key.substr(4), 16));
-  //   } else {
-  //     return String.fromCharCode(parseInt(key.substr(0, 4), 16));
-  //   }
-  // };
-
   var textureLoaded = function(position, line) {
 
     return function(texture) {
@@ -203,12 +211,15 @@ var EmojifyUI = (function() {
 
   var displayResult = function (emojis) {
     camera.position.z = 10;
+    background.remove();
     var context = canvas.getContext("2d");
     var val,
         i,
         position = 0,
         line = 0;
     var loaders = [];
+    canvas.show();
+    document.getElementById("header").remove();
     emojis.forEach(function(val, i) {
       if ((i % Math.floor(widthIndex)) === 0 && i) {
         line++;

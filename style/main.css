@@ -42,6 +42,7 @@ h1 {
   font-size: 40px;
   line-height: 1.5;
   text-shadow: 2px 2px gray;
+  transition: text-shadow 0.7s ease;
 }
 
 .controlContainer {
@@ -71,7 +72,7 @@ h1 {
   left: 0;
 }
 
-.explanation {
+#explanation {
   padding: 20px;
 }
 

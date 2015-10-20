@@ -7,25 +7,22 @@
   <body>
     <div id="background"></div>
     <div id="infoContainer">
-      <h1>Emojification Engine</h1>
-      <div class="explanation">
-        Explore your photos in breathtaking 4k 3d emoji-vision. Upload a photo or take one with your camera to get started.
+      <h1 id="header">Emojification Engine</h1>
+      <div class="content">
+        <div id="explanation">
+          Explore your photos in breathtaking 4k 3d emoji-vision. Upload a photo or take one with your camera to get started.
+        </div>
+        <div id="controls">
+            <div class="controlContainer initialControl" id="imageUploadButtonContainer">
+                Upload a Photo
+                <input type="file" name="imageUpload" id="imageUploadButton" />
+            </div>
+            <div class="controlContainer initialControl" id="takePhotoButton">Take Photo</div>
+            <div id="emojifyButton" class="hidden controlContainer">Emojify!</div>
+        </div>
       </div>
-      <div id="controls">
-          <div class="controlContainer" id="imageUploadButtonContainer">
-              Upload a Photo
-              <input type="file" name="imageUpload" id="imageUploadButton" />
-          </div>
-          <div class="controlContainer" id="takePhotoButton">Take Photo</div>
-          <div id="emojifyButton" class="hidden controlContainer">Emojify!</div>
-      </div>
-    </div>
-
-    <div id="status" class="hidden">
     </div>
     <canvas id="canvas" class="hidden"></canvas>
-    <div id="emojifyButton" class="hidden controlContainer">Emojify!</div>
-
     <video class="hidden" width="640" height="480" id="video"></video>
 
     <script type="text/javascript" src="script/q.js"></script>
