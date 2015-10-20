@@ -33,6 +33,7 @@ body {
   background-color: rgba(0,0,0,0.6);
   top: 4px;
   left: 4px;
+  padding: 4px;
 }
 
 #resultImage {

@@ -27,9 +27,10 @@ var EmojifyUI = (function() {
     in3DMode = false;
 
   var controls,
-    resultURI;
+    resultURI,
+    renderAnimationFrameID;
 
-  var geometry = new THREE.PlaneGeometry(1, 1);
+  var geometry = new THREE.PlaneGeometry(2, 2);
   var materialsCache = {};
 
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -38,7 +39,7 @@ var EmojifyUI = (function() {
 
   function render() {
     var delta = clock.getDelta();
-    requestAnimationFrame( render );
+    renderAnimationFrameID = requestAnimationFrame( render );
 
     controls.update(delta);
     renderer.render( scene, camera );
@@ -146,10 +147,6 @@ var EmojifyUI = (function() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         emojify();
       });
-
-      saveButton.addEventListener("click", function() {
-        download(resultURI, "emojified.png", "image/png");
-      });
     });
 
     imageUploadButton.addEventListener("change", imageSelected);
@@ -157,12 +154,24 @@ var EmojifyUI = (function() {
     toggle3DButton.addEventListener("click", function() {
       var resultImage = document.getElementById("resultImage");
       if (!in3DMode) {
-        canvas.show();
+        this.textContent = "2D";
+        camera.position.z = 5;
         resultImage.hide();
+        document.body.appendChild(renderer.domElement);
+        textureLoader.load(resultURI, textureLoaded);
+        controls = new THREE.TrackballControls(camera, renderer.domElement);
+        controls.target.set(0, 0, 0);
+        controls.panSpeed = 0.8;
+        controls.dynamicDampingFactor = 0.3;
+
+        render();
         in3DMode = true;
       } else {
+        this.textContent = "3D";
         canvas.hide();
+        document.body.removeChild(renderer.domElement);
         resultImage.show();
+        cancelAnimationFrame(renderAnimationFrameID);
         in3DMode = false;
       }
     });
@@ -181,11 +190,6 @@ var EmojifyUI = (function() {
 
   // Start video stream
   var startStream = function() {
-    navigator.getMedia = ( navigator.getUserMedia ||
-                         navigator.webkitGetUserMedia ||
-                         navigator.mozGetUserMedia ||
-                         navigator.msGetUserMedia);
-
     navigator.getMedia ({
       video: true,
       audio: false
@@ -205,23 +209,20 @@ var EmojifyUI = (function() {
 
   };
 
-  var textureLoaded = function(position, line) {
+  var textureLoaded = function(texture) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    var material;
+    if (materialsCache[texture.id]) {
+      material = materialsCache[texture.id];
+    } else {
+      material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+      material.transparent = true;
+      materialsCache[texture.id] = material;
+    }
+    var emoji = new THREE.Mesh(geometry, material);
 
-    return function(texture) {
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      var material;
-      if (materialsCache[texture.id]) {
-        material = materialsCache[texture.id];
-      } else {
-        material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-        material.transparent = true;
-        materialsCache[texture.id] = material;
-      }
-      var emoji = new THREE.Mesh(geometry, material);
-
-      emoji.position.set(position, line, 1);
-      scene.add(emoji);
-    };
+    emoji.position.set(0, 0, 1);
+    scene.add(emoji);
   };
 
   var emojiLoaded = function(deferred, context, position, line) {
@@ -232,7 +233,6 @@ var EmojifyUI = (function() {
   };
 
   var displayResult = function (emojis) {
-    camera.position.z = 10;
     var context = canvas.getContext("2d");
     var val,
         i,
@@ -250,8 +250,6 @@ var EmojifyUI = (function() {
       img.onload = emojiLoaded(deferred, context, position, line);
       img.src = "emoji/" + val + ".png";
       loaders.push(deferred.promise);
-
-      textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
       position++;
     });
 
@@ -265,18 +263,6 @@ var EmojifyUI = (function() {
       document.getElementById("header").remove();
       document.getElementById("resultControls").show();
     });
-
-    // while (document.body.firstChild) {
-      // document.body.removeChild(document.body.firstChild);
-    // }
-    // document.body.appendChild(renderer.domElement);
-
-    // controls = new THREE.TrackballControls(camera, renderer.domElement);
-    // controls.target.set(0, 0, 0);
-    // controls.panSpeed = 0.8;
-    // controls.dynamicDampingFactor = 0.3;
-
-    // render();
   };
 
   var setupBackground = function() {
@@ -294,4 +280,14 @@ var EmojifyUI = (function() {
 window.onload = function() {
   EmojifyUI.setupBackground();
   EmojifyUI.bindButtons();
+
+  // Remove photo option if not supported.
+  navigator.getMedia = ( navigator.getUserMedia ||
+                       navigator.webkitGetUserMedia ||
+                       navigator.mozGetUserMedia ||
+                       navigator.msGetUserMedia);
+
+  if (!navigator.getMedia) {
+    document.getElementById("takePhotoButton").remove();
+  }
 };
