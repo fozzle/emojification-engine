@@ -27,6 +27,18 @@ body {
   z-index: -1;
 }
 
+#resultControls {
+  position: fixed;
+  z-index: 2;
+  background-color: rgba(0,0,0,0.6);
+  top: 4px;
+  left: 4px;
+}
+
+#resultImage {
+  width: 100%;
+}
+
 #infoContainer {
   width: 50%;
 }

@@ -24,7 +24,10 @@ var EmojifyUI = (function() {
     clock = new THREE.Clock(),
     textureLoader = new THREE.TextureLoader(),
     emojiSize = 20,
-    controls;
+    in3DMode = false;
+
+  var controls,
+    resultURI;
 
   var geometry = new THREE.PlaneGeometry(1, 1);
   var materialsCache = {};
@@ -121,7 +124,9 @@ var EmojifyUI = (function() {
   var bindButtons = function() {
     var takePhotoButton = document.getElementById("takePhotoButton"),
       imageUploadButton = document.getElementById("imageUploadButton"),
-      emojifyButton = document.getElementById("emojifyButton");
+      emojifyButton = document.getElementById("emojifyButton"),
+      toggle3DButton = document.getElementById("toggle3DButton"),
+      saveButton = document.getElementById("saveButton");
 
 
     takePhotoButton.addEventListener("click", function(e) {
@@ -130,7 +135,7 @@ var EmojifyUI = (function() {
       removeInitialControls();
       emojifyButton.show();
 
-      emojifyButton .addEventListener('click', function() {
+      emojifyButton.addEventListener("click", function() {
         video.hide();
         canvas.width = 640;
         canvas.height = 480;
@@ -141,9 +146,26 @@ var EmojifyUI = (function() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         emojify();
       });
+
+      saveButton.addEventListener("click", function() {
+        download(resultURI, "emojified.png", "image/png");
+      });
     });
 
     imageUploadButton.addEventListener("change", imageSelected);
+
+    toggle3DButton.addEventListener("click", function() {
+      var resultImage = document.getElementById("resultImage");
+      if (!in3DMode) {
+        canvas.show();
+        resultImage.hide();
+        in3DMode = true;
+      } else {
+        canvas.hide();
+        resultImage.show();
+        in3DMode = false;
+      }
+    });
   };
 
   // hack replacing good maths
@@ -211,15 +233,13 @@ var EmojifyUI = (function() {
 
   var displayResult = function (emojis) {
     camera.position.z = 10;
-    background.remove();
     var context = canvas.getContext("2d");
     var val,
         i,
         position = 0,
         line = 0;
     var loaders = [];
-    canvas.show();
-    document.getElementById("header").remove();
+
     emojis.forEach(function(val, i) {
       if ((i % Math.floor(widthIndex)) === 0 && i) {
         line++;
@@ -231,14 +251,19 @@ var EmojifyUI = (function() {
       img.src = "emoji/" + val + ".png";
       loaders.push(deferred.promise);
 
-      // textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
+      textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
       position++;
     });
 
     Q.allSettled(loaders).then(function() {
       var img = new Image();
-      img.src = canvas.toDataURL("image/png");
+      resultURI = canvas.toDataURL("image/png");
+      img.src = resultURI;
+      img.id = "resultImage";
       document.body.appendChild(img);
+      background.remove();
+      document.getElementById("header").remove();
+      document.getElementById("resultControls").show();
     });
 
     // while (document.body.firstChild) {
