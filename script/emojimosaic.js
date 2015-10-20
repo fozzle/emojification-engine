@@ -1,11 +1,11 @@
 // Shhhhh dont tell :(
 Element.prototype.hide = function() {
   this.className = "hidden";
-}
+};
 
 Element.prototype.show = function() {
   this.className = "";
-}
+};
 
 var EmojifyUI = (function() {
   var imageControlsButton = document.getElementById("show_image_controls"),
@@ -23,14 +23,23 @@ var EmojifyUI = (function() {
     scene = new THREE.Scene(),
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
     renderer = new THREE.WebGLRenderer(),
-    textureLoader = new THREE.TextureLoader();
+    clock = new THREE.Clock(),
+    textureLoader = new THREE.TextureLoader(),
+    emojiSize = 20,
+    controls;
+
+  var geometry = new THREE.PlaneGeometry(1, 1);
+  var materialsCache = {};
 
   renderer.setSize(window.innerWidth, window.innerHeight);
   var ambientLight = new THREE.AmbientLight(0xffffff);
   scene.add(ambientLight);
 
   function render() {
+    var delta = clock.getDelta();
     requestAnimationFrame( render );
+
+    controls.update(delta);
     renderer.render( scene, camera );
   }
 
@@ -65,11 +74,18 @@ var EmojifyUI = (function() {
     }, 0);
   };
 
+  var widthIndex;
   // Passes off image and destination to emojify worker
   var emojify = function(e) {
     document.getElementsByClassName("content")[0].hide();
     statusDiv.show();
     emojifyWorker.postMessage({imageData: ctx.getImageData(0, 0, canvas.width, canvas.height), width: canvas.width, height: canvas.height});
+
+    // resize to fit incoming emojis
+    widthIndex = canvas.width/4;
+    canvas.width = canvas.width/4 * emojiSize;
+    canvas.height = canvas.height/4 * emojiSize;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   // Handle worker events!
@@ -157,21 +173,27 @@ var EmojifyUI = (function() {
 
   };
 
-  var extractEmoji = function (key) {
-    if (key.length > 4) {
-      return String.fromCharCode(parseInt(key.substr(0, 4), 16)) + String.fromCharCode(parseInt(key.substr(4), 16));
-    } else {
-      return String.fromCharCode(parseInt(key.substr(0, 4), 16));
-    }
-  };
+  // Deprecated
+  // var extractEmoji = function (key) {
+  //   if (key.length > 4) {
+  //     return String.fromCharCode(parseInt(key.substr(0, 4), 16)) + String.fromCharCode(parseInt(key.substr(4), 16));
+  //   } else {
+  //     return String.fromCharCode(parseInt(key.substr(0, 4), 16));
+  //   }
+  // };
 
   var textureLoaded = function(position, line) {
 
     return function(texture) {
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      var geometry = new THREE.PlaneGeometry(1, 1);
-      var material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-      material.transparent = true;
+      var material;
+      if (materialsCache[texture.id]) {
+        material = materialsCache[texture.id];
+      } else {
+        material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+        material.transparent = true;
+        materialsCache[texture.id] = material;
+      }
       var emoji = new THREE.Mesh(geometry, material);
 
       emoji.position.set(position, line, 1);
@@ -179,26 +201,53 @@ var EmojifyUI = (function() {
     };
   };
 
+  var emojiLoaded = function(deferred, context, position, line) {
+    return function() {
+      context.drawImage(this, position * emojiSize, line * emojiSize, emojiSize, emojiSize);
+      deferred.resolve();
+    };
+  };
+
   var displayResult = function (emojis) {
     camera.position.z = 10;
+    var context = canvas.getContext("2d");
     var val,
         i,
         position = 0,
         line = 0;
+    var loaders = [];
     emojis.forEach(function(val, i) {
-
-      val = emojis[i];
-      if ((i % Math.floor(canvas.width/4)) === 0 && i) {
-        line--;
+      if ((i % Math.floor(widthIndex)) === 0 && i) {
+        line++;
         position = 0;
       }
+      var img = new Image();
+      var deferred = Q.defer();
+      img.onload = emojiLoaded(deferred, context, position, line);
+      img.src = "emoji/" + val + ".png";
+      loaders.push(deferred.promise);
 
-      textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
+      // textureLoader.load("emoji/" + val + ".png", textureLoaded(position, line));
       position++;
     });
 
-    render();
-    document.body.appendChild(renderer.domElement);
+    Q.allSettled(loaders).then(function() {
+      var img = new Image();
+      img.src = canvas.toDataURL("image/png");
+      document.body.appendChild(img);
+    });
+
+    // while (document.body.firstChild) {
+      // document.body.removeChild(document.body.firstChild);
+    // }
+    // document.body.appendChild(renderer.domElement);
+
+    // controls = new THREE.TrackballControls(camera, renderer.domElement);
+    // controls.target.set(0, 0, 0);
+    // controls.panSpeed = 0.8;
+    // controls.dynamicDampingFactor = 0.3;
+
+    // render();
   };
 
 
